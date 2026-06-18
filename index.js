@@ -1,4 +1,3 @@
-
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -6,14 +5,19 @@ import { MongoClient, ObjectId } from "mongodb";
 import { toNodeHandler } from "better-auth/node";
 import { betterAuth } from "better-auth";
 import Stripe from "stripe";
+
 dotenv.config();
+
 process.env.BETTER_AUTH_URL = process.env.BETTER_SERVER || "http://localhost:5000";
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
 app.use(cors({
   origin: ["http://localhost:3000", "https://rokto-seva.vercel.app"],
   credentials: true
 }));
+
 app.use(express.json());
 
 if (!process.env.MONGODB_URI) {
@@ -54,6 +58,7 @@ app.get("/", (req, res) => {
   });
 });
 
+// User Profile
 app.get("/api/user/profile", async (req, res) => {
   try {
       const session = await auth.api.getSession({
@@ -74,6 +79,7 @@ app.get("/api/user/profile", async (req, res) => {
   }
 });
 
+// Admin - All Users
 app.get("/api/admin/all-users", async (req, res) => {
   try {
       const usersCollection = db.collection("user");
@@ -90,6 +96,7 @@ app.get("/api/admin/all-users", async (req, res) => {
   }
 });
 
+// Create Blood Request (Consolidated)
 app.post("/api/posts/blood-request", async (req, res) => {
   try {
       const {
@@ -129,13 +136,18 @@ app.post("/api/posts/blood-request", async (req, res) => {
       };
 
       const result = await bloodRequestCollection.insertOne(newRequest);
-      return res.status(201).json({ success: true, message: "Donation request saved successfully!", requestId: result.insertedId });
+      return res.status(201).json({ 
+          success: true, 
+          message: "Donation request saved successfully!", 
+          requestId: result.insertedId 
+      });
   } catch (error) {
       console.error("Database Insert Error:", error);
       return res.status(500).json({ success: false, message: "Database Error" });
   }
 });
 
+// Recent Requests (for donors/home)
 app.get("/api/donor/recent-requests", async (req, res) => {
   try {
       const bloodRequestCollection = db.collection("blood_requests");
@@ -152,6 +164,7 @@ app.get("/api/donor/recent-requests", async (req, res) => {
   }
 });
 
+// All Pending Requests
 app.get("/api/posts/all-requests/pending", async (req, res) => {
   try {
       const bloodRequestCollection = db.collection("blood_requests");
@@ -171,17 +184,17 @@ app.get("/api/posts/all-requests/pending", async (req, res) => {
   }
 });
 
+// My Requests (Requester's own requests)
 app.get("/api/donor/my-requests", async (req, res) => {
   try {
       const { email } = req.query; 
     
       if (!email) {
-          return res.status(400).json({ success: false, message: "Email parameter is required to identify nodes." });
+          return res.status(400).json({ success: false, message: "Email parameter is required!" });
       }
 
       const bloodRequestCollection = db.collection("blood_requests");
     
-     
       const myRequests = await bloodRequestCollection
           .find({ requesterEmail: email })
           .sort({ createdAt: -1 })
@@ -194,6 +207,7 @@ app.get("/api/donor/my-requests", async (req, res) => {
   }
 });
 
+// Update Request Status (Donor claiming request)
 app.patch("/api/posts/blood-request/:id/status", async (req, res) => {
   try {
       const { id } = req.params;
@@ -211,48 +225,26 @@ app.patch("/api/posts/blood-request/:id/status", async (req, res) => {
           }
       );
 
-      return res.json({ success: true, message: "Status & Donor profile successfully locked into grid!" });
+      return res.json({ success: true, message: "Status & Donor profile successfully updated!" });
   } catch (error) {
       return res.status(500).json({ success: false, message: "Update Error" });
   }
 });
 
+// Delete Blood Request
 app.delete("/api/posts/blood-request/:id", async (req, res) => {
   try {
       const { id } = req.params;
       const bloodRequestCollection = db.collection("blood_requests");
 
       await bloodRequestCollection.deleteOne({ _id: new ObjectId(id) });
-      return res.json({ success: true, message: "Request deleted successfully from core database!" });
+      return res.json({ success: true, message: "Request deleted successfully!" });
   } catch (error) {
       return res.status(500).json({ success: false, message: "Delete Error" });
   }
 });
 
-app.post("/api/posts/blood-request", async (req, res) => {
-  try {
-      const { patientName, bloodGroup, hospital, district, upazila, contactNumber, dateNeeded, donationTime, details, requesterEmail } = req.body;
-      const result = await db.collection("blood_requests").insertOne({
-          patientName, bloodGroup, hospital, district, upazila, contactNumber, dateNeeded, donationTime, details,
-          requesterEmail, // ডাটাবেজে ওনারশিপ ট্র্যাক করার জন্য
-          status: "pending",
-          createdAt: new Date()
-      });
-      res.status(201).json({ success: true, message: "Request created!" });
-  } catch (error) { res.status(500).json({ success: false, message: "Error" }); }
-});
-
-app.get("/api/donor/my-requests", async (req, res) => {
-  try {
-      const { email } = req.query;
-      const myRequests = await db.collection("blood_requests")
-          .find({ requesterEmail: email })
-          .sort({ createdAt: -1 })
-          .toArray();
-      res.json({ success: true, data: myRequests });
-  } catch (error) { res.status(500).json({ success: false, message: "Error" }); }
-});
-
+// Admin Stats
 app.get("/api/admin/stats", async (req, res) => {
    try {
        const totalUsers = await db.collection("user").countDocuments();
@@ -275,11 +267,7 @@ app.get("/api/admin/stats", async (req, res) => {
    }
 });
 
-app.get("/api/admin/all-users", async (req, res) => {
-   const users = await db.collection("user").find({}).toArray();
-   res.json({ success: true, data: users });
-});
-
+// Admin - Update User
 app.patch("/api/admin/update-user/:id", async (req, res) => {
    const { id } = req.params;
    const { role, status } = req.body;
@@ -290,11 +278,13 @@ app.patch("/api/admin/update-user/:id", async (req, res) => {
    res.json({ success: true });
 });
 
+// Admin - All Requests
 app.get("/api/admin/all-requests", async (req, res) => {
    const requests = await db.collection("blood_requests").find({}).toArray();
    res.json({ success: true, data: requests });
 });
 
+// Admin - Update Request Status
 app.patch("/api/admin/update-request-status/:id", async (req, res) => {
    const { id } = req.params;
    const { status } = req.body;
@@ -305,12 +295,14 @@ app.patch("/api/admin/update-request-status/:id", async (req, res) => {
    res.json({ success: true });
 });
 
+// Admin - Delete Request
 app.delete("/api/admin/request/:id", async (req, res) => {
    const { id } = req.params;
    await db.collection("blood_requests").deleteOne({ _id: new ObjectId(id) });
    res.json({ success: true, message: "Request deleted successfully" });
 });
 
+// User Profile Update
 app.patch("/api/user/update/:id", async (req, res) => {
    const { id } = req.params;
    const { name, bloodGroup, district, upazila } = req.body;
@@ -321,11 +313,11 @@ app.patch("/api/user/update/:id", async (req, res) => {
    res.json({ success: true });
 });
 
+// Full Request Update (Admin)
 app.put("/api/admin/request/:id", async (req, res) => {
    const { id } = req.params;
    const updateData = req.body;
 
-  
    delete updateData._id;
 
    try {
@@ -345,14 +337,20 @@ app.put("/api/admin/request/:id", async (req, res) => {
 });
 
 
+
+
+// আপনার server.js ফাইলে এই অংশটুকু নিশ্চিত করুন:
 app.get("/api/donor/recent-requests", async (req, res) => {
     try {
-        const { email } = req.query; 
+        const { email } = req.query; // ফ্রন্টএন্ড থেকে আসা ইমেইল
+        
+        // কুয়েরিতে ফিল্টার দেওয়া হয়েছে যাতে শুধু ওই ইউজারের রিকোয়েস্ট আসে
         const data = await db.collection("blood_requests")
             .find({ requesterEmail: email }) 
-            .sort({ createdAt: -1 })
-            .limit(3) 
+            .sort({ createdAt: -1 }) // নতুনগুলো আগে দেখাবে
+            .limit(3) // মাত্র ৩টি দেখাবে
             .toArray();
+            
         res.json({ success: true, data });
     } catch (error) {
         res.status(500).json({ success: false, message: "Database Fetch Error" });
@@ -360,12 +358,12 @@ app.get("/api/donor/recent-requests", async (req, res) => {
 });
 
 
+
 app.listen(PORT, () => {
   console.log(`===================================================`);
   console.log(`ROKTOSEVA EXPRESS SERVER CORE IS LIVE!`);
   console.log(`Running on: http://localhost:${PORT}`);
   console.log(`===================================================`);
-})
-
+});
 
 export default app;
