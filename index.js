@@ -220,3 +220,7 @@ app.get("/api/admin/stats", async (req, res) => {
 app.listen(PORT, () => {
    console.log(`Server running on port ${PORT}`);
 });
+
+
+// Vercel-এর জন্য এক্সপোর্ট করা
+export default app;
