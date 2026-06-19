@@ -370,21 +370,6 @@ app.get("/api/donors/search", async (req, res) => {
     }
 });
 
-app.get("/api/posts/blood-request/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const request = await db.collection("blood_requests").findOne({ _id: new ObjectId(id) });
-
-    if (!request) return res.status(404).json({ success: false, message: "Not found" });
-
-    res.json({ success: true, data: request });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-
-
 app.get("/api/donor/my-donations", async (req, res) => {
  try {
      const { email } = req.query;
@@ -403,6 +388,24 @@ app.get("/api/donor/my-donations", async (req, res) => {
      return res.status(500).json({ success: false, message: "Database Fetch Error" });
  }
 });
+
+
+
+app.get("/api/posts/blood-request/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const request = await db.collection("blood_requests").findOne({ _id: new ObjectId(id) });
+
+    if (!request) return res.status(404).json({ success: false, message: "Not found" });
+
+    res.json({ success: true, data: request });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+
 
 
 
