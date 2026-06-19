@@ -378,17 +378,20 @@ app.get("/api/donors/search", async (req, res) => {
 
 
 
+
+
 app.get("/api/donor/recent-requests", async (req, res) => {
    try {
-       const { email } = req.query;
+       const { email } = req.query; 
        if (!email) {
            return res.status(400).json({ success: false, message: "Email is required" });
        }
        
+       
        const data = await db.collection("blood_requests")
-           .find({ requesterEmail: email }) 
-           .sort({ createdAt: -1 })         
-           .limit(3)                       
+           .find({ donorEmail: email }) 
+           .sort({ createdAt: -1 })
+           .limit(3)
            .toArray();
            
        res.json({ success: true, data });
@@ -396,8 +399,6 @@ app.get("/api/donor/recent-requests", async (req, res) => {
        res.status(500).json({ success: false, message: "Database Fetch Error" });
    }
 });
-
-
 
 
 app.listen(PORT, () => {
