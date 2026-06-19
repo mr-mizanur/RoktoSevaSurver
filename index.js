@@ -408,15 +408,16 @@ app.get("/api/posts/blood-request/:id", async (req, res) => {
 app.get("/api/stats", async (req, res) => {
   try {
     const db = client.db("roktoseva"); 
-    const donors = await db.collection("users").countDocuments({ role: "donor" });
+    
+    const donors = await db.collection("user").countDocuments({ role: "donor" });
     const successfulDonations = await db.collection("blood_requests").countDocuments({ status: "done" });
     const pendingRequests = await db.collection("blood_requests").countDocuments({ status: "pending" });
 
     res.json({
       success: true,
       data: {
-        activeDonors: donors + "+",
-        livesImpacted: successfulDonations + "+",
+        activeDonors: donors, 
+        livesImpacted: successfulDonations,
         pendingRequests: pendingRequests
       }
     });
@@ -424,7 +425,6 @@ app.get("/api/stats", async (req, res) => {
     res.status(500).json({ success: false, message: "Error loading stats" });
   }
 });
-
 
 
 app.listen(PORT, () => {
