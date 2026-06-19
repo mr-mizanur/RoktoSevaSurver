@@ -358,6 +358,25 @@ app.get("/api/donor/recent-requests", async (req, res) => {
    }
 });
 
+app.get("/api/donors/search", async (req, res) => {
+    try {
+        const { bloodGroup, district, upazila } = req.query;
+        let query = { status: "active" }; 
+
+        if (bloodGroup) query.bloodGroup = bloodGroup;
+       
+        if (district) query.district = { $regex: new RegExp(district, "i") };
+        if (upazila) query.upazila = { $regex: new RegExp(upazila, "i") };
+
+        const donors = await db.collection("user").find(query).toArray();
+        res.json({ success: true, data: donors });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Search Error" });
+    }
+});
+
+
+
 
 app.listen(PORT, () => {
  console.log(`===================================================`);
