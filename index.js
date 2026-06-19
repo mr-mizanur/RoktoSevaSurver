@@ -371,7 +371,24 @@ app.get("/api/donors/search", async (req, res) => {
 });
 
 
+app.get("/api/donor/my-donations", async (req, res) => {
+ try {
+     const { email } = req.query;
+     if (!email) return res.status(400).json({ success: false, message: "Email required" });
 
+     const bloodRequestCollection = db.collection("blood_requests");
+  
+     
+     const myDonations = await bloodRequestCollection
+         .find({ donorEmail: email })
+         .sort({ createdAt: -1 })
+         .toArray();
+
+     return res.json({ success: true, data: myDonations });
+ } catch (error) {
+     return res.status(500).json({ success: false, message: "Database Fetch Error" });
+ }
+});
 
 app.get("/api/posts/blood-request/:id", async (req, res) => {
   try {
@@ -387,24 +404,7 @@ app.get("/api/posts/blood-request/:id", async (req, res) => {
 });
 
 
-//app.get("/api/donor/my-donations", async (req, res) => {
-// try {
-//     const { email } = req.query;
-//     if (!email) return res.status(400).json({ success: false, message: "Email required" });
-//
-//     const bloodRequestCollection = db.collection("blood_requests");
-//  
-//     
-//     const myDonations = await bloodRequestCollection
-//         .find({ donorEmail: email })
-//         .sort({ createdAt: -1 })
-//         .toArray();
-//
-//     return res.json({ success: true, data: myDonations });
-// } catch (error) {
-//     return res.status(500).json({ success: false, message: "Database Fetch Error" });
-// }
-//});
+
 
 
 
