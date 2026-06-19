@@ -200,9 +200,9 @@ app.patch("/api/posts/blood-request/:id/status", async (req, res) => {
      const { status, donorName, donorEmail } = req.body;
      const bloodRequestCollection = db.collection("blood_requests");
   
-     // এখানে result ভেরিয়েবলটি ব্যবহার করো
+     // ObjectId বাদ দিয়ে সরাসরি id ব্যবহার করছি
      const result = await bloodRequestCollection.updateOne(
-         { _id: new ObjectId(id) },
+         { _id: id }, 
          {
              $set: {
                  status: status,
@@ -212,14 +212,12 @@ app.patch("/api/posts/blood-request/:id/status", async (req, res) => {
          }
      );
 
-     // যদি কোনো ডকুমেন্ট আপডেট না হয়, তার মানে আইডি ভুল ছিল
      if (result.matchedCount === 0) {
          return res.status(404).json({ success: false, message: "Request ID not found!" });
      }
 
-     return res.json({ success: true, message: "Status & Donor profile successfully locked into grid!" });
+     return res.json({ success: true, message: "Success!" });
  } catch (error) {
-     console.error("Patch Error:", error);
      return res.status(500).json({ success: false, message: "Update Error" });
  }
 });
