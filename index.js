@@ -242,16 +242,6 @@ app.post("/api/posts/blood-request", async (req, res) => {
  } catch (error) { res.status(500).json({ success: false, message: "Error" }); }
 });
 
-app.get("/api/donor/my-requests", async (req, res) => {
- try {
-     const { email } = req.query;
-     const myRequests = await db.collection("blood_requests")
-         .find({ requesterEmail: email })
-         .sort({ createdAt: -1 })
-         .toArray();
-     res.json({ success: true, data: myRequests });
- } catch (error) { res.status(500).json({ success: false, message: "Error" }); }
-});
 
 app.get("/api/admin/stats", async (req, res) => {
   try {
@@ -375,7 +365,18 @@ app.get("/api/donors/search", async (req, res) => {
     }
 });
 
+app.get("/api/posts/blood-request/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const request = await db.collection("blood_requests").findOne({ _id: new ObjectId(id) });
 
+    if (!request) return res.status(404).json({ success: false, message: "Not found" });
+
+    res.json({ success: true, data: request });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 
 app.listen(PORT, () => {
