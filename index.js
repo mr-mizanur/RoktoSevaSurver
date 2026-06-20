@@ -466,6 +466,48 @@ app.get("/api/stats", async (req, res) => {
 });
 
 
+
+
+
+
+// সব অ্যাডমিন রাউটের জন্য গ্লোবাল প্রোটেকশন
+app.use("/api/admin", async (req, res, next) => {
+    try {
+        const session = await auth.api.getSession({
+            headers: req.headers
+        });
+
+        // যদি লগইন না থাকে বা অ্যাডমিন না হয়
+        if (!session || !session.user || session.user.role !== "admin") {
+            return res.status(403).json({ 
+                success: false, 
+                message: "403 Unauthorized Access" 
+            });
+        }
+        next();
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+});
+
+// এর নিচেই আপনার app.listen() থাকবে
+app.listen(PORT, () => {
+ console.log(`===================================================`);
+ console.log(`ROKTOSEVA EXPRESS SERVER CORE IS LIVE!`);
+ console.log(`Running on: http://localhost:${PORT}`);
+ console.log(`===================================================`);
+});
+
+
+
+
+
+
+
+
+
+
+
 app.listen(PORT, () => {
  console.log(`===================================================`);
  console.log(`ROKTOSEVA EXPRESS SERVER CORE IS LIVE!`);
