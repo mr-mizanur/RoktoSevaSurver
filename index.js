@@ -194,33 +194,33 @@ app.get("/api/donor/my-requests", async (req, res) => {
  }
 });
 
-app.patch("/api/posts/blood-request/:id/status", async (req, res) => {
- try {
-     const { id } = req.params;
-     const { status, donorName, donorEmail } = req.body;
-     const bloodRequestCollection = db.collection("blood_requests");
-  
-     
-     const result = await bloodRequestCollection.updateOne(
-         { _id: id }, 
-         {
-             $set: {
-                 status: status,
-                 donorName: donorName || null,
-                 donorEmail: donorEmail || null
-             }
-         }
-     );
-
-     if (result.matchedCount === 0) {
-         return res.status(404).json({ success: false, message: "Request ID not found!" });
-     }
-
-     return res.json({ success: true, message: "Success!" });
- } catch (error) {
-     return res.status(500).json({ success: false, message: "Update Error" });
- }
-});
+//app.patch("/api/posts/blood-request/:id/status", async (req, res) => {
+// try {
+//     const { id } = req.params;
+//     const { status, donorName, donorEmail } = req.body;
+//     const bloodRequestCollection = db.collection("blood_requests");
+//  
+//     
+//     const result = await bloodRequestCollection.updateOne(
+//         { _id: id }, 
+//         {
+//             $set: {
+//                 status: status,
+//                 donorName: donorName || null,
+//                 donorEmail: donorEmail || null
+//             }
+//         }
+//     );
+//
+//     if (result.matchedCount === 0) {
+//         return res.status(404).json({ success: false, message: "Request ID not found!" });
+//     }
+//
+//     return res.json({ success: true, message: "Success!" });
+// } catch (error) {
+//     return res.status(500).json({ success: false, message: "Update Error" });
+// }
+//});
 
 app.delete("/api/posts/blood-request/:id", async (req, res) => {
  try {
@@ -390,18 +390,57 @@ app.get("/api/donor/my-donations", async (req, res) => {
  }
 });
 
+
+
+
+// ১. PATCH রাউট (স্ট্যাটাস আপডেটের জন্য)
+app.patch("/api/posts/blood-request/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, donorName, donorEmail } = req.body;
+    
+    // এখানে new ObjectId(id) ব্যবহার করা বাধ্যতামূলক
+    const result = await db.collection("blood_requests").updateOne(
+      { _id: new ObjectId(id) }, 
+      {
+        $set: {
+          status: status,
+          donorName: donorName || null,
+          donorEmail: donorEmail || null
+        }
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: "Request ID not found!" });
+    }
+
+    return res.json({ success: true, message: "Success!" });
+  } catch (error) {
+    console.error("Patch Error:", error);
+    return res.status(500).json({ success: false, message: "Update Error" });
+  }
+});
+
+// ২. GET রাউট (ডিটেইলস দেখার জন্য)
 app.get("/api/posts/blood-request/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // এখানেও new ObjectId(id) ব্যবহার করা বাধ্যতামূলক
     const request = await db.collection("blood_requests").findOne({ _id: new ObjectId(id) });
 
-    if (!request) return res.status(404).json({ success: false, message: "Not found" });
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request ID not found!" });
+    }
 
     res.json({ success: true, data: request });
   } catch (error) {
+    console.error("Fetch Error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 
 
