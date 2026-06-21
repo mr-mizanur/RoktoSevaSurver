@@ -464,18 +464,6 @@ app.get("/api/stats", async (req, res) => {
   }
 });
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // এনভায়রনমেন্ট থেকে কি-টি লোড হবে
-
-app.get("/api/admin/stripe-balance", async (req, res) => {
-  try {
-    const balance = await stripe.balance.retrieve();
-    // Stripe এর রেসপন্স থেকে available ব্যালেন্সটি নিন (এটি সেন্টে থাকে তাই ১০০ দিয়ে ভাগ করা হয়েছে)
-    const amount = balance.available[0].amount / 100;
-    res.json({ success: true, balance: amount });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to fetch stripe balance" });
-  }
-});
 
 
 
