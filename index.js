@@ -14,6 +14,7 @@ app.use(cors({
  credentials: true
 }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 if (!process.env.MONGODB_URI) {
  console.error(" Error: MONGODB_URI is missing!");
