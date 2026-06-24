@@ -469,24 +469,27 @@ app.get("/api/stats", async (req, res) => {
 
 
 
-// সব ফান্ডিং বা ডোনেশন লিস্ট দেখার API
 app.get("/api/all-donations", async (req, res) => {
   try {
     const fundsCollection = db.collection("funds");
-  
-    const allDonations = await fundsCollection.find({}).sort({ createdAt: -1 }).toArray();
+   
+    const allDonations = await fundsCollection.find({}).toArray();
     
+   
+    const formattedData = allDonations.map(d => ({
+        userEmail: d.userEmail || "Anonymous",
+        amount: d.amount || 0
+    }));
+
     res.json({ 
         success: true, 
-        count: allDonations.length,
-        data: allDonations 
+        data: formattedData 
     });
   } catch (error) {
     console.error("Error fetching donations:", error);
     res.status(500).json({ success: false, message: "Error fetching donations" });
   }
 });
-
 
 
 
