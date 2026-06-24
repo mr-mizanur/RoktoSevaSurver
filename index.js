@@ -14,10 +14,9 @@ app.use(cors({
  credentials: true
 }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 if (!process.env.MONGODB_URI) {
- console.error(" Error: MONGODB_URI is missing!");
+ console.error("❌ Error: MONGODB_URI is missing!");
  process.exit(1);
 }
 
@@ -469,83 +468,52 @@ app.get("/api/stats", async (req, res) => {
 
 
 
-app.get("/api/all-donations", async (req, res) => {
-  try {
-  
-    const fundsCollection = db.collection("funds");
-   
-   
-    const allDonations = await fundsCollection.find({}).sort({ _id: -1 }).toArray();
-    
-  
-    const formattedData = allDonations.map(d => ({
-        
-        userEmail: d.userEmail || "Anonymous",
-       
-        amount: d.amount ? parseInt(d.amount) : 0
-    }));
 
-   
-    res.json({ 
-        success: true, 
-        count: formattedData.length,
-        data: formattedData 
-    });
-  } catch (error) {
-  
-    console.error("Error fetching donations:", error);
-    res.status(500).json({ 
-        success: false, 
-        message: "Error fetching donations from database" 
-    });
-  }
-});
-// এই রাউটটি পেমেন্ট সাকসেস হওয়ার পর ডাটাবেসে ডাটা ইনসার্ট করবে
-app.post("/api/save-donation", async (req, res) => {
-  try {
-    const { userEmail, amount } = req.body;
-    const fundsCollection = db.collection("funds");
-    
-    await fundsCollection.insertOne({
-      userEmail: userEmail || "Anonymous",
-      amount: parseInt(amount),
-      date: new Date()
-    });
 
-    res.json({ success: true, message: "Donation recorded successfully!" });
+
+
+
+
+
+
+// ১. ফান্ডিং লিস্ট দেখার API
+app.get("/api/funds", async (req, res) => {
+  try {
+    const fundsCollection = db.collection("funds");
+    const allFunds = await fundsCollection.find({}).sort({ date: -1 }).toArray();
+    res.json({ success: true, data: allFunds });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: "Error fetching funds" });
   }
 });
 
+// ২. Stripe চেকআউট API
 app.post("/api/checkout_sessions", async (req, res) => {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  
-  // ফর্ম থেকে অ্যামাউন্ট আসছে কি না চেক করুন
-  const amount = parseInt(req.body.amount) || 10; 
-
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
         price_data: {
           currency: 'usd',
-          product_data: { name: 'Donation to RoktoSeva' },
-          unit_amount: amount * 100,
+          product_data: { name: 'RoktoSeva Donation' },
+          unit_amount: 1000, // $10.00
         },
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/funding?success=true&amount=${amount}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/funding?canceled=true`,
+      success_url: `${process.env.CLIENT_URL}/dashboard/funding?success=true`,
+      cancel_url: `${process.env.CLIENT_URL}/dashboard/funding?canceled=true`,
     });
-
     res.redirect(303, session.url);
   } catch (err) {
-    console.error("Stripe Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
+
+
+
 
 
 
