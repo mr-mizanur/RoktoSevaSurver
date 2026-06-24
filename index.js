@@ -466,7 +466,46 @@ app.get("/api/stats", async (req, res) => {
 
 
 
+// ফান্ডিং লিস্ট দেখার জন্য GET রাউট
+app.get("/api/funds", async (req, res) => {
+  try {
+    const fundsCollection = db.collection("funds");
+    const allFunds = await fundsCollection.find({}).sort({ createdAt: -1 }).toArray();
+    res.json({ success: true, data: allFunds });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching funds" });
+  }
+});
 
+// Stripe পেমেন্ট সেশন তৈরির জন্য POST রাউট
+app.post("/api/checkout_sessions", async (req, res) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  
+  // ইউজার থেকে আসা অ্যামাউন্ট গ্রহণ, সর্বনিম্ন ১০ ডলার
+  let amount = parseInt(req.body.amount);
+  if (!amount || amount < 10) amount = 10; 
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'RoktoSeva Donation' },
+          unit_amount: amount * 100, // Stripe সেন্টে হিসেব করে
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/funding?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/funding?canceled=true`,
+    });
+
+    res.redirect(303, session.url);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 
