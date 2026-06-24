@@ -499,9 +499,52 @@ app.get("/api/all-donations", async (req, res) => {
     });
   }
 });
+// এই রাউটটি পেমেন্ট সাকসেস হওয়ার পর ডাটাবেসে ডাটা ইনসার্ট করবে
+app.post("/api/save-donation", async (req, res) => {
+  try {
+    const { userEmail, amount } = req.body;
+    const fundsCollection = db.collection("funds");
+    
+    await fundsCollection.insertOne({
+      userEmail: userEmail || "Anonymous",
+      amount: parseInt(amount),
+      date: new Date()
+    });
 
+    res.json({ success: true, message: "Donation recorded successfully!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
+app.post("/api/checkout_sessions", async (req, res) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  
+  // ফর্ম থেকে অ্যামাউন্ট আসছে কি না চেক করুন
+  const amount = parseInt(req.body.amount) || 10; 
 
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'Donation to RoktoSeva' },
+          unit_amount: amount * 100,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/funding?success=true&amount=${amount}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/funding?canceled=true`,
+    });
+
+    res.redirect(303, session.url);
+  } catch (err) {
+    console.error("Stripe Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 
