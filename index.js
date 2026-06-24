@@ -471,6 +471,58 @@ app.get("/api/stats", async (req, res) => {
 
 
 
+
+
+
+
+
+// ১. ফান্ডিং লিস্ট দেখার API
+app.get("/api/funds", async (req, res) => {
+  try {
+    const fundsCollection = db.collection("funds");
+    const allFunds = await fundsCollection.find({}).sort({ date: -1 }).toArray();
+    res.json({ success: true, data: allFunds });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching funds" });
+  }
+});
+
+// ২. Stripe চেকআউট API
+app.post("/api/checkout_sessions", async (req, res) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'RoktoSeva Donation' },
+          unit_amount: 1000, // $10.00
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${process.env.CLIENT_URL}/dashboard/funding?success=true`,
+      cancel_url: `${process.env.CLIENT_URL}/dashboard/funding?canceled=true`,
+    });
+    res.redirect(303, session.url);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.listen(PORT, () => {
  console.log(`===================================================`);
  console.log(`ROKTOSEVA EXPRESS SERVER CORE IS LIVE!`);
