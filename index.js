@@ -16,7 +16,7 @@ app.use(cors({
 app.use(express.json());
 
 if (!process.env.MONGODB_URI) {
- console.error("❌ Error: MONGODB_URI is missing!");
+ console.error(" Error: MONGODB_URI is missing!");
  process.exit(1);
 }
 
@@ -468,28 +468,44 @@ app.get("/api/stats", async (req, res) => {
 
 
 
-
 app.get("/api/all-donations", async (req, res) => {
   try {
+  
     const fundsCollection = db.collection("funds");
    
-    const allDonations = await fundsCollection.find({}).toArray();
-    
    
+    const allDonations = await fundsCollection.find({}).sort({ _id: -1 }).toArray();
+    
+  
     const formattedData = allDonations.map(d => ({
+        
         userEmail: d.userEmail || "Anonymous",
-        amount: d.amount || 0
+       
+        amount: d.amount ? parseInt(d.amount) : 0
     }));
 
+   
     res.json({ 
         success: true, 
+        count: formattedData.length,
         data: formattedData 
     });
   } catch (error) {
+  
     console.error("Error fetching donations:", error);
-    res.status(500).json({ success: false, message: "Error fetching donations" });
+    res.status(500).json({ 
+        success: false, 
+        message: "Error fetching donations from database" 
+    });
   }
 });
+
+
+
+
+
+
+
 
 
 
